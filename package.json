@@ -1,0 +1,16 @@
+{
+  "name": "thintest",
+  "version": "0.0.1",
+  "keywords": [
+    "js",
+    "javascript",
+    "node",
+    "test",
+    "runner",
+    "testing"
+  ],
+  "author": "Evert Bauwens (https://github.com/everbuild)",
+  "license": "MIT",
+  "repository": "everbuild/thintest",
+  "bugs": "https://github.com/everbuild/thintest/issues"
+}
