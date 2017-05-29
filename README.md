@@ -17,7 +17,7 @@ You can add ``--global`` to install the "binary" globally, but it's usually not 
 
 As `npm test` script:
 
-```json
+```
 // package.json
 {
   "scripts": {
@@ -33,7 +33,7 @@ Via command-line directly:
 ```
 $ [node_modules/.bin/]thintest [--testDir=<path to test directory>] [test 1] [test 2] ... 
 ```
-For other options, see [Config]. If no tests are specified, all tests are run.
+For other options, see [Config](#config). If no tests are specified, all tests are run.
 
 Or by using the API:
 ```ecmascript 6
@@ -48,7 +48,7 @@ Config can be done either:
 
 * if using the command-line or as `npm test` script: 
   via CLI parameters and/or by adding a `"thintest": {options}` entry to your `package.json` (former override latter).
-* if using the API: via the options argument (see [Usage])
+* if using the API: via the options argument (see [Usage](#usage))
 
 options object | CLI parameter      | Default  | Meaning
 ---------------|--------------------|----------|--------
@@ -90,6 +90,6 @@ const MySubject = require('thintest').subject([{options}])
 `.subject()` resolves the path of the subject file based on the path of the calling test file 
 and [require](https://nodejs.org/api/globals.html#globals_require)s it.
 It basically takes the part of the test file path after `testDir` and adds that to `srcDir`, therefore these 2 options 
-need to be [setup correctly](Config) for this to work.
+need to be [setup correctly](#config) for this to work.
 The same options as for the `thintest` API can optionally be passed in.
 If omitted, those from `package.json` will be used.
