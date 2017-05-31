@@ -1,14 +1,28 @@
 #!/usr/bin/env node
-const run = require('./index')
+const minimist = require('minimist')
+const tt = require('./index')
 
-const opts = loadOptions() // TODO
-const tests = process.argv.slice(2)
-const args = [opts].concat(tests)
-
-run.apply(this, args).then(report => {
-    report.print()
-    process.exit(report.results.find(test => test.error) ? 1 : 0)
-}, error => {
-    console.error(error)
-    process.exit(1)
+const opts = minimist(process.argv.slice(2), {
+    default: {
+        expandAll: false
+    },
+    alias: {
+        failFast: 'f',
+        expandAll: 'a',
+        maxConcur: 'c',
+        help: 'h',
+        verbose: 'v'
+    }
 })
+
+if(opts.help) {
+    console.log(require('fs').readFileSync(require.resolve('./help.txt'), 'utf-8'))
+} else {
+    tt.run.apply(this, [opts].concat(opts._)).then(report => {
+        report.print()
+        process.exit(report.failed.length > 0 ? 1 : 0)
+    }).catch(error => {
+        console.error(error)
+        process.exit(2)
+    })
+}

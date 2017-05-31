@@ -1,0 +1,45 @@
+
+Usage: thintest [test1, test2 ...]
+
+Where test1 etc are optional paths to test files to run (absolute or relative to --testDir).
+If omitted, all files under --testDir are run.
+
+Options:
+
+--root:             Path containing your package.json.
+                    Used as base for other relative paths.
+                    Defaults to the location of the nearest package.json wrt. cwd.
+
+--testDir:          Path containing your test files (default: "test").
+
+--srcDir:           Path containing your source files (default: "src").
+
+--failFast, -f:     Skip further tests as soon as possible after a failed test.
+
+--progressSize:     Number of characters to use for the progress bar (default: 40).
+
+--assert:           Module ID of assert package to use (default: standard Node assert)
+
+--stackLimit:       Limit the number of stack frames to print for failed tests (default: 5)
+
+--maxConcur, -c:    Limit the number of tests to run simultaneously (default: 10).
+                    This is especially relevant with --failFast, as the more tests are running,
+                    the longer it'll take to stop after the first failure.
+
+--expandAll, -a:    Also include details about successful and skipped tests in the output.
+
+--verbose, -v:      Print more info (such as normalized options).
+
+--help, -h:         You're reading it.
+
+These options can also be defined in your package.json, like so:
+
+    "thintest": {
+        "srcDir": "src/main",
+        "testDir": "src/test"
+    }
+
+In fact, any options given via the command line will be merged with and override those from your package.json.
+
+The process exits with code 0 when all tests were successful, with 1 when there were any failures
+and with 2 if there was an error outside of a test.

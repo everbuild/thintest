@@ -2,120 +2,152 @@ const p = require('path')
 const klaw = require('klaw')
 
 
-module.exports = run
-module.exports.subject = resolveSubject
+const tt = module.exports = {
+    SKIPPED: Symbol('skipped'),
+    SUCCEEDED: Symbol('succeeded'),
+    FAILED: Symbol('failed'),
+    
+    test: test,
+    run: run
+}
 
 
-function run(options, ...tests) {
-    if(typeof options === 'string') {
-        tests.unshift(options)
-        options = null
+// cf. https://en.wikipedia.org/wiki/ANSI_escape_code
+const styles = {
+    success: '\u001b[32;1m', // green
+    mixed: '\u001b[33;1m', // yellow
+    skipped: '\u001b[36;0m', // cyan
+    failed: '\u001b[31;1m', // red
+    reset: '\u001b[0m'
+}
+
+
+// excuses for using these semi-globals:
+// tests can be triggered either by being required by the runner or by being run directly
+// we need options in both cases, but only want to load them once with the runner
+let options
+// done contains a function that is called when each test is done
+// this allows the runner to install a hook to receive finished tests
+// since we don't want to force the user to export anything specific from their test files, this is the only way
+// the default function is used when running a test file directly to print the results
+let done = test => new Report([test]).print()
+
+
+// called from a test file to define and run only itself
+function test(spec) {
+    loadOptions()
+    new Test(resolveTestFile()).run(spec)
+}
+
+
+// called by the CLI (or another API user) to run multiple test files and show aggregated results
+function run(overrides, ...files) {
+    if(typeof overrides === 'string') {
+        files.unshift(overrides)
+        overrides = null
     }
-    options = loadOptions(options)
+    loadOptions(overrides)
 
     const out = options.out
-    let skip = false
+    const printProgress = out === process.stdout ? progress => {
+        progress = Math.round(options.progressSize*progress)
+        out.write(`\rrunning tests [${'·'.repeat(progress)}${' '.repeat(options.progressSize - progress)}]`)
+    } : x => x
 
-    out.write('running tests')
-    const promisedTests = tests && tests.length > 0 ? Promise.resolve(tests) : listTests(options.testDir)
-    return promisedTests.then(tests => Promise.all(tests.map((test, idx) => {
-        if(skip) return {test, skipped: true}
-        return exec(test).then(result => ({test}), error => {
-            skip = options.failFast
-            return {test, error}
-        }).then(result => {
-            const progress = Math.round(options.progressSize*(idx + 1)/tests.length)
-            out.write(`\nrunning tests ${'▒'.repeat(progress)}${'░'.repeat(options.progressSize - progress)}`)
-            return result
-        })
-    }))).then(results => {
-        out.write('\n')
-        return new Report(results)
-    })
+    printProgress(0)
 
-    class Report {
-        constructor(results) {
-            this.results = results
-        }
+    const promisedFiles = files && files.length > 0 ? Promise.resolve(files) : listTestFiles()
 
-        print() {
-            out.write(this.toString())
-        }
+    return promisedFiles.then(files => {
+        if(files.length === 0) return []
+        return new Promise(resolve => {
+            const tests = []
+            let launchCount = 0
 
-        toString() {
-            const joys = this.results.filter(test => !test.error && !test.skipped)
-            const tears = this.results.filter(test => test.error)
-            let msg = ''
-            msg += '\u001b[1m' // bold
-            if(tears.length === 0) {
-                msg += '\u001b[32m' // green
-                msg += joys.length > 1 ? `all ${joys.length} tests succeeded :-D` : 'one and only test succeeded :-)'
-            } else {
-                if(joys.length > 0) {
-                    msg += '\u001b[33m' // yellow
-                    msg += `${joys.length} test${joys.length > 1 ? 's' : ''} succeeded but ${tears.length} failed :-|`
-                    msg += '\u001b[31m' // red
-                } else {
-                    msg += '\u001b[31m' // red
-                    msg += tears.length > 1 ? `all ${tears.length} tests failed :-S` : 'only 1 test and it failed :\'('
+            const launchTests = () => {
+                while(launchCount < Math.min(files.length, tests.length + options.maxConcur)) {
+                    const file = files[launchCount ++]
+                    setImmediate(() => require(file))
                 }
-                tears.forEach(tear => {
-                    msg += '\n'
-                    let stack = tear.error.stack
-                    if (stack) {
-                        let i = stack.lastIndexOf(tear.test)
-                        if(i !== -1) i = stack.indexOf('\n', i)
-                        if(i !== -1) stack = stack.substring(0, i)
-                        msg += stack
-                    } else {
-                        msg += tear.error.toString()
-                    }
-                })
             }
-            msg += '\u001b[0m' // reset all styles
-            return msg
-        }
-    }
 
+            done = test => {
+                tests.push(test)
+
+                if(options.failFast && test.result === tt.FAILED) {
+                    // mark all remaining tests as skipped
+                    while(launchCount < files.length) {
+                        tests.push(new Test(files[launchCount ++], tt.SKIPPED))
+                    }
+                }
+
+                printProgress(tests.length/files.length)
+
+                if(tests.length < files.length) launchTests()
+                else resolve(tests)
+            }
+
+            launchTests()
+        }).then(tests => {
+            out.write('\n')
+            return new Report(tests)
+        }).catch(crash)
+    })
 }
 
 
-function listTests(path) {
+function listTestFiles() {
     const exp = /\.js$/
     const tests = []
-    return new Promise((resolve, reject) => klaw(path)
+    return new Promise((resolve, reject) => klaw(options.testDir)
         .on('data', data => data.stats.isFile() && exp.test(data.path) && tests.push(data.path))
-        .on('end', () => resolve(tests)))
-        .on('error', reject)
+        .on('end', () => resolve(tests))
+        .on('error', reject))
 }
 
 
-function exec(file) {
-    try {
-        return Promise.resolve(require(file))
-    } catch (e) {
-        return Promise.reject(e)
-    }
+function resolveTestFile() {
+    const frame = parseStack(new Error().stack).find(frame => frame.file && frame.file !== __filename)
+    if(!frame) throw new Error("Can't determine test name")
+    return frame.file
 }
 
 
-function resolveSubject(options) {
-    options = loadOptions(options)
-    const exp = /at (?:.+\()?(.*?)(?:\:\d+)*\)?$/gm
-    const stack = new Error().stack
-    const thisFile = exp.exec(stack)[1]
-    const callingFile = exp.exec(stack)[1]
-    const relativePath = p.relative(options.testDir, callingFile)
-    const subjectPath = path.join(options.srcDir, relativePath)
-    return require(subjectPath)
+function parseStack(stack) {
+    const errorExp = /^(.*?): (.*)$/
+    const frameExp = /^\s*at (?:(.+) \()?(.*?)((?:\:\d+)*)\)?$/
+    return stack.split('\n').map(line => {
+        let matches = line.match(frameExp)
+        if(matches) {
+            return {
+                line,
+                func: matches[1],
+                file: matches[2],
+                loc: matches[3]
+            }
+        }
+        matches = line.match(errorExp)
+        if(matches) {
+            return {
+                line,
+                error: matches[1],
+                msg: matches[2]
+            }
+        }
+        return {line}
+    })
 }
 
 
 function loadOptions(overrides) {
-    let opts = fromPackage(process.cwd())
-    if(overrides) Object.assign(opts, overrides)
-    normalizeOptions(opts)
-    return opts
+    if(options) return
+
+    options = fromPackage(overrides.root || process.cwd())
+    if(overrides) Object.assign(options, overrides)
+    normalize(options)
+    if(options.verbose) options.out.write([
+        'root', 'testDir', 'srcDir', 'failFast', 'progressSize', 'stackLimit', 'maxConcur', 'expandAll'
+    ].map(k => `${k}: ${options[k]}\n`).join(''))
 
     function fromPackage(path) {
         let opts = {}
@@ -126,17 +158,130 @@ function loadOptions(overrides) {
             const parent = p.join(path, '..')
             if(parent !== path) return fromPackage(parent)
         }
-        opts.root = opts.root && p.isAbsolute(opts.root) || path
+        opts.root = path
         return opts
+    }
+
+    function normalize(opts) {
+        opts.root = p.resolve(opts.root)
+        opts.out = opts.out === null ? {write: () => true} : (opts.out || process.stdout)
+        opts.testDir = p.resolve(opts.root, opts.testDir || 'test')
+        opts.srcDir = p.resolve(opts.root, opts.srcDir || 'src')
+        opts.failFast = !!opts.failFast
+        opts.progressSize = opts.progressSize > 0 ? Math.round(opts.progressSize) : 40
+        opts.assert = opts.assert || 'assert'
+        if(typeof opts.assert === 'string') opts.assert = require(opts.assert)
+        opts.stackLimit = opts.stackLimit > 0 ? opts.stackLimit : 5
+        opts.maxConcur = opts.maxConcur > 0 ? Math.round(opts.maxConcur) : 10
+        opts.expandAll = opts.expandAll === undefined ? true : !!opts.expandAll
+        opts.verbose = !!opts.verbose
     }
 }
 
 
-function normalizeOptions(opts) {
-    opts.root = p.resolve(opts.root)
-    opts.out = opts.out === null ? {write: () => true} : (opts.out || process.stdout)
-    opts.testDir = p.resolve(opts.root, opts.testDir || 'test')
-    opts.srcDir = p.resolve(opts.root, opts.srcDir || 'src')
-    opts.failFast = !!opts.failFast
-    opts.progressSize = opts.progressSize > 0 ? Math.round(opts.progressSize) : 40
+function crash(error) {
+    // error outside of test - bail out!
+    console.error(error)
+    process.exit(2)
+}
+
+
+class Test {
+    constructor(file, result) {
+        this.file = file
+        const relative = p.relative(options.testDir, file)
+        this.subjectFile = p.join(options.srcDir, relative)
+        this.name = relative.replace(new RegExp('\\' + p.sep, 'g'), ' : ').replace(/\.js$/, '')
+        this.result = result || tt.SUCCEEDED
+        this.methods = {}
+    }
+
+    run(spec) {
+        Object.getOwnPropertyNames(spec.prototype)
+            .filter(method => method !== 'constructor' && typeof spec.prototype[method] === 'function')
+            .reduce((promise, method) => promise.then(() => {
+                    if(options.failFast && this.result === tt.FAILED) {
+                        this.methods[method] = tt.SKIPPED
+                    } else {
+                        this.methods[method] = tt.SUCCEEDED
+                        const inst = new spec(this.subjectFile)
+                        Object.assign(inst, options.assert)
+                        if(!inst.subject) Object.defineProperty(inst, 'subject', {get: () => require(this.subjectFile)})
+                        return inst[method]()
+                    }
+                }).catch(error => {
+                    this.result = tt.FAILED
+                    this.methods[method] = error
+                }),
+                Promise.resolve()
+            )
+            .then(() => done(this)).catch(crash)
+    }
+}
+
+
+class Report {
+    constructor(tests) {
+        this.tests = tests
+        this.succeeded = []
+        this.failed = []
+        this.skipped = []
+        for(let test of tests) {
+            const key = test.result === tt.SUCCEEDED ? 'succeeded' : test.result === tt.SKIPPED ? 'skipped' : 'failed'
+            this[key].push(test)
+        }
+    }
+
+    print() {
+        options.out.write(this.toString() + '\n')
+    }
+
+    toString() {
+        const yesCount = this.succeeded.length
+        const dohCount = this.failed.length
+        const skipCount = this.skipped.length
+        const total = this.tests.length
+
+        let color
+        if(yesCount === total) color = styles.success
+        // if at least 80% of tests were successful, show in "mixed" style, which is not as harsh as "failed" style
+        // unless failFast is on, in which case we don't know how many skipped tests might otherwise be successful
+        else if(options.failFast || yesCount/total < 0.8) color = styles.failed
+        else color = styles.mixed
+
+        let stats = []
+        if(yesCount > 0) stats.push(`${yesCount} succeeded`)
+        if(dohCount > 0) stats.push(`${styles.failed}${dohCount} failed${color}`)
+        if(skipCount > 0) stats.push(`${skipCount} ${skipCount === 1 ? 'was' : 'were'} skipped`)
+
+        let msg = `${color}${total} test${total === 1 ? '' : 's'} processed: ${stats.join(', ')}`
+
+        this.tests.forEach(test => {
+            if(test.result === tt.SKIPPED) {
+                if(options.expandAll) msg += `\n${styles.skipped}${test.name} > skipped`
+            } else for(let method in test.methods) {
+                const result = test.methods[method]
+                if(result === tt.SUCCEEDED) {
+                    if(options.expandAll) msg += `\n${styles.success}${test.name} - ${method} > succeeded`
+                } else if(result === tt.SKIPPED) {
+                    if(options.expandAll) msg += `\n${styles.skipped}${test.name} - ${method} > skipped`
+                } else {
+                    msg += `\n${styles.failed}${test.name} - ${method} > `
+                    let stack = result.stack
+                    if (stack) {
+                        let frames = parseStack(stack)
+                        const i = frames.findIndex(frame => frame.file === __filename)
+                        frames = frames.slice(0, Math.min(i < 0 ? frames.length : i, options.stackLimit + 1))
+                        msg += frames.map(frame => frame.msg ? frame.msg : frame.line).join('\n')
+                    } else {
+                        msg += result.toString()
+                    }
+                }
+            }
+        })
+
+        msg += styles.reset
+
+        return msg
+    }
 }
