@@ -1,8 +1,10 @@
 
-Usage: thintest [test1, test2 ...]
+Usage: thintest [pattern1, pattern2 ...]
 
-Where test1 etc are optional paths to test files to run (absolute or relative to --testDir).
-If omitted, all files under --testDir are run.
+Where patterns are optional paths to the test files to be run.
+The paths should be relative to --testDir and can be micromatch glob expressions
+(see https://github.com/micromatch/micromatch#matching-features).
+If omitted, all JS files under --testDir are run (pattern: "*.js").
 
 Options:
 

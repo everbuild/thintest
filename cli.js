@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 const minimist = require('minimist')
 const tt = require('./index')
+const shared = require('./lib/shared')
 
 const opts = minimist(process.argv.slice(2), {
     default: {
@@ -18,11 +19,8 @@ const opts = minimist(process.argv.slice(2), {
 if(opts.help) {
     console.log(require('fs').readFileSync(require.resolve('./help.txt'), 'utf-8'))
 } else {
-    tt.run.apply(this, [opts].concat(opts._)).then(report => {
+    tt.run.apply(tt, [opts].concat(opts._)).then(report => {
         report.print()
         process.exit(report.failed.length > 0 ? 1 : 0)
-    }).catch(error => {
-        console.error(error)
-        process.exit(2)
-    })
+    }).catch(shared.crash)
 }

@@ -5,7 +5,7 @@
   "bin": "./cli.js",
   "scripts": {
     "postinstall": "node linkSelf",
-    "test": "node cli",
+    "test": "node cli self.js",
     "preversion": "npm test",
     "postversion": "git push && git push --tags"
   },
@@ -24,6 +24,7 @@
   "dependencies": {
     "graceful-fs": "^4.1.11",
     "klaw": "^1.3.1",
+    "micromatch": "^3.0.2",
     "minimist": "^1.2.0"
   }
 }
