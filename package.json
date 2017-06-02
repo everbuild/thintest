@@ -5,7 +5,7 @@
   "bin": "./cli.js",
   "scripts": {
     "postinstall": "node linkSelf",
-    "test": "node thintest self.js",
+    "test": "node cli self.js",
     "preversion": "npm test",
     "postversion": "git push && git push --tags"
   },
