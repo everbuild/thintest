@@ -1,6 +1,14 @@
 {
   "name": "thintest",
-  "version": "0.0.1",
+  "version": "0.2.0",
+  "main": "./index.js",
+  "bin": "./cli.js",
+  "scripts": {
+    "postinstall": "node linkSelf",
+    "test": "node cli self.js",
+    "preversion": "npm test",
+    "postversion": "git push && git push --tags"
+  },
   "keywords": [
     "js",
     "javascript",
@@ -12,5 +20,11 @@
   "author": "Evert Bauwens (https://github.com/everbuild)",
   "license": "MIT",
   "repository": "everbuild/thintest",
-  "bugs": "https://github.com/everbuild/thintest/issues"
+  "bugs": "https://github.com/everbuild/thintest/issues",
+  "dependencies": {
+    "graceful-fs": "^4.1.11",
+    "klaw": "^1.3.1",
+    "micromatch": "^3.0.2",
+    "minimist": "^1.2.0"
+  }
 }
