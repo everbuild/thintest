@@ -19,8 +19,5 @@ const opts = minimist(process.argv.slice(2), {
 if(opts.help) {
     console.log(require('fs').readFileSync(require.resolve('./help.txt'), 'utf-8'))
 } else {
-    tt.run.apply(tt, [opts].concat(opts._)).then(report => {
-        report.print()
-        process.exit(report.failed.length > 0 ? 1 : 0)
-    }).catch(shared.crash)
+    tt.run.apply(tt, [opts].concat(opts._)).then(shared.exit).catch(shared.crash)
 }
