@@ -21,7 +21,7 @@ To see what a thin test looks like, [jump right to here](#tests).
 ```
 $ npm install --saveDev thintest
 ```
-You can add ``--global`` to install the "binary" globally, but it's usually not necessary as `thintest` can be easily setup though NPM scripts.
+You can add ``--global`` to install the "binary" globally, but it's usually not necessary as `thintest` can be easily setup through NPM scripts.
 
 # Usage
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 const minimist = require('minimist')
-const tt = require('./index')
+const tt = require('thintest')
 const shared = require('./lib/shared')
 
 const opts = minimist(process.argv.slice(2), {
