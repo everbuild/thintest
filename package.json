@@ -9,10 +9,15 @@
     "postversion": "git push && git push --tags"
   },
   "keywords": [
-    "js",
-    "javascript",
-    "node",
     "test",
+    "framework",
+    "javascript",
+    "js",
+    "node",
+    "lightweight",
+    "fast",
+    "minimal",
+    "unit",
     "runner",
     "testing"
   ],
