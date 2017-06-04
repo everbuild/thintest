@@ -3,7 +3,7 @@ const tt = require('thintest')
 tt.test(class {
     'run some tests via the API'() {
         console.log('---- child test output ----')
-        return tt.run('examples/*.js').then(report => {
+        return tt.run({testDir: 'examples'}).then(report => {
             this.equal(report.tests.length, 5)
             const successes = report.tests.filter(test => test.result === tt.SUCCEEDED)
             const failures = report.tests.filter(test => test.result === tt.FAILED)
@@ -12,8 +12,8 @@ tt.test(class {
             this.equal(failures.length, 1)
             this.equal(skipped.length, 0)
             const failed = failures[0]
-            this.equal(failed.name, 'examples : 001')
-            this.equal(failed.file, 'C:\\dev\\thintest\\test\\examples\\001.js')
+            this.equal(failed.name, '001')
+            this.equal(failed.file, 'C:\\dev\\thintest\\examples\\001.js')
             this.equal(failed.result, tt.FAILED)
             console.log(report.toString())
             console.log('---------------------------')
@@ -22,11 +22,11 @@ tt.test(class {
 
     'validate report'() {
         console.log('---- child test output ----')
-        return tt.run('examples/minimal.js').then(report => {
+        return tt.run({testDir: 'examples'}, 'minimal.js').then(report => {
             const reportString = report.toString()
             console.log(reportString)
             const plain = reportString.replace(/\u001b\[.*?m/g, '')
-            this.equal(plain, '1 succeeded\nexamples : minimal - Mmmm π > succeeded')
+            this.equal(plain, '1 succeeded\nminimal - Mmmm π > succeeded')
             console.log('---------------------------')
         })
     }

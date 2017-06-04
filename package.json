@@ -4,7 +4,8 @@
   "main": "./index.js",
   "bin": "./cli.js",
   "scripts": {
-    "test": "node cli self.js",
+    "pretest": "node linkSelf",
+    "test": "node cli",
     "preversion": "npm test",
     "postversion": "git push && git push --tags"
   },
