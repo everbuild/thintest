@@ -72,15 +72,15 @@ Each one overriding the previous, i.e. if an option is defined in your `package.
 
 option          | CLI parameter         | Default       | Meaning
 ----------------|-----------------------|---------------|--------
-`baseDir`       | `--baseDir`           | location of the nearest package.json from `cwd` up | Path to root dir of your project, containing your package.json. Used to load your package.json and as base for other relative paths. Useful for running `thintest` from a dir that is not in your project tree.
 `testDir`       | `--testDir=<path>`    | `"test"`      | Path containing your test files
 `srcDir`        | `--srcDir=<path>`     | `"src"`       | Path containing your source files
-`failFast`      | `--failFast, -f`      | `false`       | Skip further tests as soon as possible after a failed test
-`progressSize`  | `--progressSize`      | `40`          | Number of characters to use for the progress bar
 `assert`        | `--assert`            | [`"assert"`][node assert] | Module ID of assert package to inject into your tests
-`stackLimit`    | `--stackLimit`        | `5`           | Limit the number of stack frames to print for failed tests
+`failFast`      | `--failFast, -f`      | `false`       | Skip further tests as soon as possible after a failed test
 `maxConcur`     | `--maxConcur, -c`     | `10`          | Limit the number of tests to run simultaneously
+`baseDir`       | `--baseDir`           | location of the nearest package.json from `cwd` up | Path to root dir of your project, containing your package.json. Used to load your package.json and as base for other relative paths. Useful for running `thintest` from a dir that is not in your project tree.
 `expandAll`     | `--expandAll, -a`     | `false`       |  Also include details about successful and skipped tests in the output
+`stackLimit`    | `--stackLimit`        | `5`           | Limit the number of stack frames to print for failed tests
+`progressSize`  | `--progressSize`      | `40`          | Number of characters to use for the progress bar
  
 # Tests
 

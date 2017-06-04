@@ -8,28 +8,28 @@ If omitted, all JS files under --testDir are run.
 
 Options:
 
---baseDir:          Path to root dir of your project, containing your package.json.
-                    Used to load your package.json and as base for other relative paths.
-                    Defaults to the location of the nearest package.json wrt. cwd.
-                    Useful for running thintest from a dir that is not in your project tree.
-
 --testDir:          Path containing your test files (default: "test").
 
 --srcDir:           Path containing your source files (default: "src").
 
---failFast, -f:     Skip further tests as soon as possible after a failed test.
-
---progressSize:     Number of characters to use for the progress bar (default: 40).
-
 --assert:           Module ID of assert package to use (default: standard Node assert)
 
---stackLimit:       Limit the number of stack frames to print for failed tests (default: 5)
+--failFast, -f:     Skip further tests as soon as possible after a failed test.
 
 --maxConcur, -c:    Limit the number of tests to run simultaneously (default: 10).
                     This is especially relevant with --failFast, as the more tests are running,
                     the longer it'll take to stop after the first failure.
 
+--baseDir:          Path to root dir of your project, containing your package.json.
+                    Used to load your package.json and as base for other relative paths.
+                    Defaults to the location of the nearest package.json wrt. cwd.
+                    Useful for running thintest from a dir that is not in your project tree.
+
 --expandAll, -a:    Also include details about successful and skipped tests in the output.
+
+--stackLimit:       Limit the number of stack frames to print for failed tests (default: 5)
+
+--progressSize:     Number of characters to use for the progress bar (default: 40).
 
 --verbose, -v:      Print more info (such as normalized options).
 
