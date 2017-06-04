@@ -72,7 +72,7 @@ Each one overriding the previous, i.e. if an option is defined in your `package.
 
 option          | CLI parameter         | Default       | Meaning
 ----------------|-----------------------|---------------|--------
-`root`          | `--root`              | location of the nearest package.json from `cwd` up | Path containing your package.json. Used as base for other relative paths.
+`baseDir`       | `--baseDir`           | location of the nearest package.json from `cwd` up | Path to root dir of your project, containing your package.json. Used to load your package.json and as base for other relative paths. Useful for running `thintest` from a dir that is not in your project tree.
 `testDir`       | `--testDir=<path>`    | `"test"`      | Path containing your test files
 `srcDir`        | `--srcDir=<path>`     | `"src"`       | Path containing your source files
 `failFast`      | `--failFast, -f`      | `false`       | Skip further tests as soon as possible after a failed test

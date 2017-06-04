@@ -8,9 +8,10 @@ If omitted, all JS files under --testDir are run.
 
 Options:
 
---root:             Path containing your package.json.
-                    Used as base for other relative paths.
+--baseDir:          Path to root dir of your project, containing your package.json.
+                    Used to load your package.json and as base for other relative paths.
                     Defaults to the location of the nearest package.json wrt. cwd.
+                    Useful for running thintest from a dir that is not in your project tree.
 
 --testDir:          Path containing your test files (default: "test").
 
