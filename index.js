@@ -40,7 +40,10 @@ function listTestFiles(path) {
     return new Promise((resolve, reject) => klaw(path)
         .on('data', data => data.stats.isFile() && exp.test(data.path) && tests.push(data.path))
         .on('end', () => resolve(tests))
-        .on('error', reject))
+        .on('error', e => {
+            if(e.code === 'ENOENT') resolve([])
+            else reject(e)
+        }))
 }
 
 
