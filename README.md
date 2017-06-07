@@ -30,7 +30,7 @@ As `npm test` script:
 // package.json
 {
   "scripts": {
-    "test": "node thintest"
+    "test": "thintest"
   },
   "thintest": {
     // options
